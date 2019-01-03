@@ -21,7 +21,9 @@ output: newOrderFileList (list of .txt file containing new order)
 def getNewOrder(mail,emailList):
     newOrderFileList = []
     md5Old=''
-    for emailID in emailList:
+    newEmailNum = len(emailList)
+    for num, emailID in enumerate(emailList):
+        print('Processing...'+str(num+1)+' of '+str(newEmailNum))
         result, emailData = mail.fetch(emailID,'RFC822')
         rawEmail = emailData[0][1].decode("utf-8")
         emailMsg = email.message_from_string(rawEmail)

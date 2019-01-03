@@ -53,36 +53,46 @@ while True:
 
     newOrderFileList = emailScraper.getNewOrder(mail,emailList)
     #print(newOrderFileList)
-
-    for orderFileName in newOrderFileList:
+    newOrderNum = len(newOrderFileList)
+    for num, orderFileName in enumerate(newOrderFileList):
         #flatten the raw email to simplify regex search
         dataExtraction.flattenRawEmail(orderFileName)
     for orderFileName in newOrderFileList:
         #Extract order information from the flatten raw email
-        orderInfoList = dataExtraction.getOrderInfo(orderFileName)
-        #print('\n'+orderInfoList)
+        numOfKedai, megaOrderList = dataExtraction.getOrderInfo(orderFileName)
+        for orderInfoList in megaOrderList:
+            foodInfoList = orderInfoList[2]
+            restaurantInfoList = dataExtraction.getRestaurantInfo(orderInfoList[4])
+            if restaurantInfoList[0] == 'no match':
+                print('No matching restaurant found. Cannot proceed!')
+                exit()
+            customerInfoList = orderInfoList[-4:]
+            """
+            print('\nOrder Details for '+orderFileName+': ')
+            print('orderInfoList:')
+            print(orderInfoList)
+            print('foodInfoList:')
+            print(foodInfoList)
+            print('restaurantInfoList:')
+            print(restaurantInfoList)
+            print('customerInfoList:')
+            print(customerInfoList)
+            """
+            #Data Processing
+            masterOrderList = dataProcessing.genMasterOrderList(orderInfoList, restaurantInfoList[0], orderFileName, tag)
+            masterFoodList = dataProcessing.genMasterFoodList(orderInfoList[0], restaurantInfoList[0], foodInfoList, orderFileName, tag)
+            print('masterOrderList:')
+            print(masterOrderList)
+            print('masterFoodList:')
+            print(masterFoodList)
 
-        foodInfoList = orderInfoList[2]
-        restaurantInfoList = dataExtraction.getRestaurantInfo(orderInfoList[4])
-        customerInfoList = orderInfoList[-4:]
+            #Push to csv
+            #dataProcessing.pushToCsv(masterOrderList, masterFoodList)
 
-        #print('\nOrder Details for '+orderFileName+': ')
-        #print(orderInfoList)
-        #print(foodInfoList)
-        #print(restaurantInfoList)
-        #print(customerInfoList)
-
-        #Data Processing
-        masterOrderList = dataProcessing.genMasterOrderList(orderInfoList, restaurantInfoList[0], orderFileName, tag)
-        masterFoodList = dataProcessing.genMasterFoodList(orderInfoList[0], restaurantInfoList[0], foodInfoList, orderFileName, tag)
-        #print(masterOrderList)
-        #print(masterFoodList)
-
-        #Push to csv
-        dataProcessing.pushToCsv(masterOrderList, masterFoodList)
-
-        #generate Text Msg
-        msgGenerator.genTextMsg(masterOrderList, masterFoodList, orderNum=1, rider='KZ')
+            #generate Text Msg
+            #msgToRider, msgToKedai = msgGenerator.genTextMsg(masterOrderList, masterFoodList, orderNum=1, rider='?')
+            #print(msgToRider)
+            #print(msgToKedai)
 
     print('\nNew order successfully added. Next email check in ' + str(checkInterval) +'sec...')
     print('CTRL+C to stop automation\n')

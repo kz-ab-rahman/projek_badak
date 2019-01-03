@@ -19,16 +19,17 @@ def getChargeDetail(restaurantName):
                 break
             else:
                 pass
-
+    if not found:
+        chargeList = -1
     return chargeList
 
 def printCommonInfo(kedai, orderNum, masterFoodList, rider, chargeType, chargeToShop):
     totalFoodPrice = 0
     totalFoodQuantity = 0
-    header = f"\
+    header = f"\n\
 HIPPO FOOD DELIVERY\n\
-Order No: {orderNum}\n\
-Nama Kedai: {kedai}\n\
+*Order No: {orderNum}*\n\
+Nama Kedai: *{kedai}*\n\
 Pesanan:"
 
     print(header)
@@ -40,7 +41,7 @@ Pesanan:"
             pass
         else:
             note = '(note:'+note+')'
-        print(f"{num+1}. {foodItem[2]} (RM{unitPrice}) x {quantity} set {note}")
+        print(f"{num+1}. {foodItem[2]} (RM{unitPrice:.2f}) x {quantity} set {note}")
         totalPrice = unitPrice*quantity
         totalFoodQuantity+=quantity
         totalFoodPrice+=totalPrice
@@ -52,12 +53,15 @@ Pesanan:"
     else:
         pass
     print(f"Rider: {rider}")
-    print(f"Bayar kpd {kedai}: RM{totalFoodPrice}")
+    print(f"Bayar kpd {kedai}: RM{totalFoodPrice:.2f}")
 
     return
 
 def genTextMsg(masterOrderList, masterFoodList, orderNum, rider):
     kedai = masterOrderList[3]
+    if kedai == 'no match':
+        print('Could not find restaurant. Will not proceed')
+        exit()
     orderID = masterOrderList[0]
     deliveryTime = masterOrderList[1]
     customerName = masterOrderList[4]
@@ -76,36 +80,33 @@ def genTextMsg(masterOrderList, masterFoodList, orderNum, rider):
         totalFoodPrice+=totalPrice
 
     #calculate pick time (delivery time - 15min)
-    deliveryTimeObj = datetime.strptime(deliveryTime, '%m/%d/%Y %I:%M %p')
+    deliveryTimeObj = datetime.strptime(deliveryTime, globalParam.incomingDateFormat)
     deliveryTime = deliveryTimeObj.strftime('%I:%M %p (%d %b, %Y)')
-    pickupTimeObj = deliveryTimeObj - timedelta(minutes=15)
+    pickupTimeObj = deliveryTimeObj - timedelta(minutes=globalParam.pickupToDeliveryGap)
     pickupTime = pickupTimeObj.strftime('%I:%M %p (%d %b, %Y)')
-
 
     with io.StringIO() as buf, redirect_stdout(buf):
         #print("============== Message to Rider =================")
         printCommonInfo(kedai, orderNum, masterFoodList, rider, chargeType, chargeToShop)
-        print("--------------------------------------")
+        print("---------------------------------------------")
         print(f"Delivery Time: {deliveryTime}")
         print(f"Customer: {customerName}")
         print(f"Phone no: {customerPhone}")
         print(f"Address: {customerAddress}")
-        print(f"Cas Penghantaran: RM{deliveryCharge}")
-        print(f"Collect dari Customer: RM{totalFoodPrice+deliveryCharge}")
+        print(f"Cas Penghantaran: RM{deliveryCharge:.2f}")
+        print(f"Collect dari Customer: RM{(totalFoodPrice+deliveryCharge):.2f}")
         print(f"OrderID: {orderID}")
-        print("")
         msgToRider = buf.getvalue()
     with io.StringIO() as buf, redirect_stdout(buf):
         #print("============== Message to Kedai =================")
         printCommonInfo(kedai, orderNum, masterFoodList, rider, chargeType, chargeToShop)
         print(f"Pick-up time: {pickupTime}")
         print(f"OrderID: {orderID}")
-        print("")
         msgToKedai = buf.getvalue()
 
     return msgToRider, msgToKedai
 
-
+"""
 masterOrderList = ['1848178', '12/10/2018 12:30 PM', '12/10/2018 7:10 AM', 'Dinis Café', 'Mohd Afzanizam  Mohd Zain', '0135104516', 'nizamdiha@gmail.com', '18 Lorong Limonia 3  Bertam LAKESIDE ', '1x Mee Goreng; 1x Nasi Goreng Pataya Ayam Goreng; 1x Nasi Tomato Ayam Masak Merah', 'new_order_28122018.024154.html.txt', 'cuti sekolah']
 masterFoodList = [['1848178', 'Dinis Café', 'Mee Goreng', '4.00', '1', ' ', 'new_order_28122018.024154.html.txt', 'cuti sekolah'], ['1848178', 'Dinis Café', 'Nasi Goreng Pataya Ayam Goreng', '5.00', '1', ' ', 'new_order_28122018.024154.html.txt', 'cuti sekolah'], ['1848178', 'Dinis Café', 'Nasi Tomato Ayam Masak Merah', '4.50', '1', ' ', 'new_order_28122018.024154.html.txt', 'cuti sekolah']]
 
@@ -119,8 +120,9 @@ masterFoodList = [['1848178', 'Dinis Café', 'Mee Goreng', '4.00', '1', ' ', 'ne
 #masterFoodList = [['1848214', 'Arango Park', 'Lasagna Cheezo', '12.90', '1', 'Tak Mau Chees', 'new_order_28122018.024159.html.txt', 'cuti sekolah']]
 
 orderNum = 1
-rider = 'KZ'
+rider = '?'
 
 msgToRider, msgToKedai = genTextMsg(masterOrderList, masterFoodList, orderNum, rider)
 print(msgToRider)
 print(msgToKedai)
+"""
