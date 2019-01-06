@@ -1,8 +1,11 @@
 #!python3
 
+
 #goto https://myaccount.google.com/lesssecureapps, turn on less secure app access
 import imaplib, time, re, linecache, sys, getpass, msvcrt
 import globalParam, dataProcessing, dataExtraction, emailScraper, msgGenerator
+
+argList = str(sys.argv)
 
 usernm = 'hippofooddelivery@gmail.com'
 serverName = 'imap.gmail.com'
@@ -86,13 +89,18 @@ while True:
             print('masterFoodList:')
             print(masterFoodList)
 
-            #Push to csv
-            #dataProcessing.pushToCsv(masterOrderList, masterFoodList)
+            if 'updatecsv' in argList:
+                #Push to csv
+                print("Pushing data to csv...")
+                dataProcessing.pushToCsv(masterOrderList, masterFoodList)
 
-            #generate Text Msg
-            #msgToRider, msgToKedai = msgGenerator.genTextMsg(masterOrderList, masterFoodList, orderNum=1, rider='?')
-            #print(msgToRider)
-            #print(msgToKedai)
+            if 'sendmsg' in argList:
+                #generate Text Msg
+                print("Generating text messages...")
+                msgToRider, msgToKedai = msgGenerator.genTextMsg(masterOrderList, masterFoodList, orderNum=1, rider='?')
+                print("Sending test messages...")
+                print(msgToRider)
+                print(msgToKedai)
 
     print('\nNew order successfully added. Next email check in ' + str(checkInterval) +'sec...')
     print('CTRL+C to stop automation\n')

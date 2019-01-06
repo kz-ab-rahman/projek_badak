@@ -5,27 +5,7 @@ import globalParam
 from datetime import datetime, timedelta
 from contextlib import redirect_stdout
 
-def getChargeDetail(restaurantName):
-    chargeList=[]
-    with open(globalParam.restaurantDataFile, 'r') as file:
-        next(file) #skip csv header
-        reader = csv.reader(file)
-        found = False
-        for line in reader:
-            result = restaurantName.find(line[1])
-            if result != -1:
-                chargeList = line[5:]
-                found = True
-                break
-            else:
-                pass
-    if not found:
-        chargeList = -1
-    return chargeList
-
-def printCommonInfo(kedai, orderNum, masterFoodList, rider, chargeType, chargeToShop):
-    totalFoodPrice = 0
-    totalFoodQuantity = 0
+def printCommonInfo(orderNum, kedai, masterFoodList, totalPack, rider, payToShop):
     header = f"\n\
 HIPPO FOOD DELIVERY\n\
 *Order No: {orderNum}*\n\
@@ -42,44 +22,31 @@ Pesanan:"
         else:
             note = '(note:'+note+')'
         print(f"{num+1}. {foodItem[2]} (RM{unitPrice:.2f}) x {quantity} set {note}")
-        totalPrice = unitPrice*quantity
-        totalFoodQuantity+=quantity
-        totalFoodPrice+=totalPrice
-    #print(f"Jumlah Pek: {totalFoodQuantity}")
-    if chargeType == 2:
-        totalFoodPrice = totalFoodPrice - (chargeToShop*totalFoodQuantity)
-    elif chargeType == 3:
-        totalFoodPrice = totalFoodPrice - chargeToShop
-    else:
-        pass
+
+    #print(f"Jumlah Pek: {totalPack}")
     print(f"Rider: {rider}")
-    print(f"Bayar kpd {kedai}: RM{totalFoodPrice:.2f}")
+    print(f"Bayar kpd {kedai}: RM{payToShop:.2f}")
 
     return
 
 def genTextMsg(masterOrderList, masterFoodList, orderNum, rider):
-    kedai = masterOrderList[3]
-    if kedai == 'no match':
-        print('Could not find restaurant. Will not proceed')
-        exit()
     orderID = masterOrderList[0]
     deliveryTime = masterOrderList[1]
+    orderTime = masterOrderList[2]
+    kedai = masterOrderList[3]
     customerName = masterOrderList[4]
     customerPhone = masterOrderList[5]
+    customerEmail = masterOrderList[6]
     customerAddress = masterOrderList[7]
-    chargeList = getChargeDetail(kedai)
-    chargeType = int(chargeList[0])
-    deliveryCharge = float(chargeList[-1])
-    chargeToShop = float(chargeList[chargeType])
-    #print(chargeType,chargeToShop,deliveryCharge)
-    totalFoodPrice = 0
+    totalPack = masterOrderList[9]
+    chargeType = masterOrderList[10]
+    totalFoodPrice = masterOrderList[11]
+    deliveryCharge = masterOrderList[12]
+    colectFromCustomer = masterOrderList[13]
+    chargeToShop = masterOrderList[14]
+    payToShop = masterOrderList[15]
 
-    #calculate total food price
-    for foodItem in masterFoodList:
-        totalPrice = float(foodItem[3])*int(foodItem[4]) #unitPrice x quantity
-        totalFoodPrice+=totalPrice
-
-    #calculate pick time (delivery time - 15min)
+    #calculate pick time
     deliveryTimeObj = datetime.strptime(deliveryTime, globalParam.incomingDateFormat)
     deliveryTime = deliveryTimeObj.strftime('%I:%M %p (%d %b, %Y)')
     pickupTimeObj = deliveryTimeObj - timedelta(minutes=globalParam.pickupToDeliveryGap)
@@ -87,19 +54,19 @@ def genTextMsg(masterOrderList, masterFoodList, orderNum, rider):
 
     with io.StringIO() as buf, redirect_stdout(buf):
         #print("============== Message to Rider =================")
-        printCommonInfo(kedai, orderNum, masterFoodList, rider, chargeType, chargeToShop)
+        printCommonInfo(orderNum, kedai, masterFoodList, totalPack, rider, payToShop)
         print("---------------------------------------------")
         print(f"Delivery Time: {deliveryTime}")
         print(f"Customer: {customerName}")
         print(f"Phone no: {customerPhone}")
         print(f"Address: {customerAddress}")
         print(f"Cas Penghantaran: RM{deliveryCharge:.2f}")
-        print(f"Collect dari Customer: RM{(totalFoodPrice+deliveryCharge):.2f}")
+        print(f"Collect dari Customer: RMRM{colectFromCustomer:.2f}")
         print(f"OrderID: {orderID}")
         msgToRider = buf.getvalue()
     with io.StringIO() as buf, redirect_stdout(buf):
         #print("============== Message to Kedai =================")
-        printCommonInfo(kedai, orderNum, masterFoodList, rider, chargeType, chargeToShop)
+        printCommonInfo(orderNum, kedai, masterFoodList, totalPack, rider, payToShop)
         print(f"Pick-up time: {pickupTime}")
         print(f"OrderID: {orderID}")
         msgToKedai = buf.getvalue()
@@ -107,17 +74,17 @@ def genTextMsg(masterOrderList, masterFoodList, orderNum, rider):
     return msgToRider, msgToKedai
 
 """
-masterOrderList = ['1848178', '12/10/2018 12:30 PM', '12/10/2018 7:10 AM', 'Dinis Café', 'Mohd Afzanizam  Mohd Zain', '0135104516', 'nizamdiha@gmail.com', '18 Lorong Limonia 3  Bertam LAKESIDE ', '1x Mee Goreng; 1x Nasi Goreng Pataya Ayam Goreng; 1x Nasi Tomato Ayam Masak Merah', 'new_order_28122018.024154.html.txt', 'cuti sekolah']
-masterFoodList = [['1848178', 'Dinis Café', 'Mee Goreng', '4.00', '1', ' ', 'new_order_28122018.024154.html.txt', 'cuti sekolah'], ['1848178', 'Dinis Café', 'Nasi Goreng Pataya Ayam Goreng', '5.00', '1', ' ', 'new_order_28122018.024154.html.txt', 'cuti sekolah'], ['1848178', 'Dinis Café', 'Nasi Tomato Ayam Masak Merah', '4.50', '1', ' ', 'new_order_28122018.024154.html.txt', 'cuti sekolah']]
+masterOrderList=['1899955', '03/01/2019 8:30 PM', '03/01/2019 6:33 PM', "Nan's Kitchen", 'Nizam Zain', '0135104516', 'nizamdiha@gmail.com', '18 Lorong Limonia 3  Bertam LAKESIDE ', "1x Nasi Goreng Cina; 1x Nasi Goreng Daging; 1x Nan's Special", 3, 1, 23.5, 4.0, 27.5, 0.0, 23.5, 'new_order_04012019.022721.html.txt', '']
+masterFoodList=[['1899955', "Nan's Kitchen", 'Nasi Goreng Cina', '6.50', '1', ' ', 'new_order_04012019.022721.html.txt', ''], ['1899955', "Nan's Kitchen", 'Nasi Goreng Daging', '7.00', '1', ' ', 'new_order_04012019.022721.html.txt', ''], ['1899955', "Nan's Kitchen", "Nan's Special", '10.00', '1', ' ', 'new_order_04012019.022721.html.txt', '']]
 
-#masterOrderList = ['1865177', '12/18/2018 12:00 PM', '12/17/2018 1:47 PM', 'Mangkuk Tingkat', 'Ida Ismail', '0143696487', 'idashazrina@gmail.com', 'No 19 Lorong Limonia 1 Bertam Perdana 2 ', '2x Set Asam Pedas; 2x Set Ayam Madu', 'new_order_28122018.023820.html.txt', 'cuti sekolah']
-#masterFoodList = [['1865177', 'Mangkuk Tingkat', 'Set Asam Pedas', '6.00', '2', ' ', 'new_order_28122018.023820.html.txt', 'cuti sekolah'], ['1865177', 'Mangkuk Tingkat', 'Set Ayam Madu', '6.00', '2', ' ', 'new_order_28122018.023820.html.txt', 'cuti sekolah']]
+#masterOrderList=['1898054.1', '02/01/2019 12:30 PM', '02/01/2019 11:10 AM', "HippoFood (Nan's Kitchen)", 'nurul nadiah azmi', '01114430036', 'yon.paan@yahoo.com', 'no 55 g jalan dagangan 10 no 5 g', '1x Nasi Ayam Kunyit (NK)', 1, 2, 7.0, 0.0, 7.0, 2.0, 5.0, 'new_order_04012019.022700.html.txt', '']
+#masterFoodList=[['1898054.1', "HippoFood (Nan's Kitchen)", 'Nasi Ayam Kunyit (NK)', '7.00', '1', ' ', 'new_order_04012019.022700.html.txt', '']]
 
-#masterOrderList = ['1881365', '12/24/2018 8:30 PM', '12/24/2018 7:00 PM', 'Char Koay Teow CIMB', 'am mohd borkhan', '01140394377', 'amgrey8889@gmail.com', 'no 54,lorong 1.taman air tawar indah.teluk air tawar ', '1x Char Koay Teow Special; 1x Char Koay Teow Biasa', 'new_order_28122018.023417.html.txt', 'cuti sekolah']
-#masterFoodList = [['1881365', 'Char Koay Teow CIMB', 'Char Koay Teow Special', '7.50', '1', ' ', 'new_order_28122018.023417.html.txt', 'cuti sekolah'], ['1881365', 'Char Koay Teow CIMB', 'Char Koay Teow Biasa', '5.50', '1', ' ', 'new_order_28122018.023417.html.txt', 'cuti sekolah']]
+#masterOrderList=['1899992', '03/01/2019 8:50 PM', '03/01/2019 7:48 PM', 'Char Koay Teow CIMB', 'Ayu  Halim', '0125550186', 'ayupali8684@gmail.com', '1728 Kepala Batas', '2x Char Koay Teow Biasa', 2, 3, 11.0, 4.0, 15.0, 1.0, 10.0, 'new_order_04012019.022731.html.txt', '']
+#masterFoodList=[['1899992', 'Char Koay Teow CIMB', 'Char Koay Teow Biasa', '5.50', '2', ' ', 'new_order_04012019.022731.html.txt', '']]
 
-#masterOrderList = ['1848214', '12/11/2018 12:30 PM', '12/10/2018 4:52 PM', 'Arango Park', 'Nur Syuhadah', '0125814410', 'syu3010@gmail.com', 'no 1 lorong limonia 2 No 1 Lorong Limonia 2 ', '1x Lasagna Cheezo', 'new_order_28122018.024159.html.txt', 'cuti sekolah']
-#masterFoodList = [['1848214', 'Arango Park', 'Lasagna Cheezo', '12.90', '1', 'Tak Mau Chees', 'new_order_28122018.024159.html.txt', 'cuti sekolah']]
+#masterOrderList=['1899890', '03/01/2019 2:25 PM', '03/01/2019 1:22 PM', 'Anjung Satay', 'Rozana Abd Rahim', '0134325494', 'rozana_ummizaim@yahoo.com', 'Jalan Perak, 13200 Kepala Batas 1', '2x Mee Tulang; 2x Nasi Daging', 4, 1, 28.0, 4.0, 32.0, 0.0, 28.0, 'new_order_04012019.022714.html.txt', '']
+#masterFoodList=[['1899890', 'Anjung Satay', 'Mee Tulang', '7.00', '2', ' ', 'new_order_04012019.022714.html.txt', ''], ['1899890', 'Anjung Satay', 'Nasi Daging', '7.00', '2', ' ', 'new_order_04012019.022714.html.txt', '']]
 
 orderNum = 1
 rider = '?'

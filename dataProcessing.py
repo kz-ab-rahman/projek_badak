@@ -9,8 +9,7 @@ def getChargeDetail(restaurantName):
         reader = csv.reader(file)
         found = False
         for line in reader:
-            result = restaurantName.find(line[1])
-            if result != -1:
+            if line[1] == restaurantName:
                 chargeList = line[-5:]
                 found = True
                 break
@@ -76,7 +75,7 @@ def genMasterOrderList(orderInfoList, restaurantName, orderFileName, tag):
     masterOrderList = dummyList
     masterOrderList.extend([foodSummary,totalFoodQuantity,chargeType,totalFoodPrice,deliveryCharge,chargeToCustomer,chargeToShop,payToShop,orderFileName,tag]) #append misc info
     #date reformating for order 1892380 and below.
-    orderID = int(masterOrderList[0])
+    orderID = float(masterOrderList[0])
     if orderID <= 1892380:
         #print('date reformatting required')
         masterOrderList[1], masterOrderList[2] = reformatDate(masterOrderList[1], masterOrderList[2])

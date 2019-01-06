@@ -131,7 +131,7 @@ def getRestaurantInfo(restaurantInfo):
         restaurantInfoList = addRestaurant()
     return restaurantInfoList
 
-
+"""
 orderFileName = 'new_order_03012019.094058.html.txt'
 #flattenRawEmail(orderFileName)
 numOfKedai, megaOrderList = getOrderInfo(orderFileName)
@@ -149,3 +149,4 @@ for orderInfoList in megaOrderList:
     print(restaurantInfoList)
     print('customerInfoList:')
     print(customerInfoList)
+"""
