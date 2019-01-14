@@ -1,7 +1,15 @@
 #!python3
 
 import re, linecache, csv, copy
-import globalParam
+import globalParam, dataProcessing
+
+def getOrderTool(orderFileName):
+    if orderFileName.find('type0') != -1:
+        return 'app'
+    elif orderFileName.find('type1') != -1:
+        return 'webapp/emulator'
+    else:
+        return 'fastfood'
 
 def flattenRawEmail(orderFileName):
     with open(globalParam.rawEmailPath+orderFileName, 'r+') as file:
@@ -18,11 +26,8 @@ def flattenRawEmail(orderFileName):
 
 def getOrderInfo(orderFileName):
     line = linecache.getline(globalParam.rawEmailPath+orderFileName, 1)
-    #https://regex101.com/
-    regexInOrder = 'Number: <\/strong>\s?([^<]+).*Place Time: <\/strong>\s?([^<]+)<\/p><hr(?: \/|><p)>(.*)(?:Tax Total|Delivery (?:Charge|Fee)).*Created on :<\/strong> ([^<]+)<\/p><p>([^<]+).*Information :<\/strong><\/p><p>(.*)<br(?: \/)?>\s?(.*)<br(?: \/)?>\s?(.*)<br(?: \/)?>(.*)<br(?: \/)?>'
-    regexInFood = 'Details<\/strong> : (.+)\s\((?:RM)?([^)]+).*Qty<\/strong> : ([^<]+).*Notes <\/strong>:\s?([^<]+)'
-    regexStringOrder = re.compile(regexInOrder)
-    regexStringFood = re.compile(regexInFood)
+    regexStringOrder = re.compile(globalParam.regexInOrder)
+    regexStringFood = re.compile(globalParam.regexInFood)
 
     match = re.search(regexStringOrder, line)
     if match:
@@ -84,11 +89,31 @@ def getOrderInfo(orderFileName):
         else:
             megaOrderList=[orderInfoList]
             kedaiHippo=1
+    ######handling for fast food delivery
+    elif orderFileName.find('type2') != -1: #fast food delivery (type2) handler
+        orderInfoList=[None]*9
+        foodInfoList=[None]*4
+        match = re.search(r"formID(\d+)",orderFileName) #extract formID from the filename
+        orderInfoList[0] = match.group(1) #use formID as orderID
+        regexStringFastFood = re.compile(globalParam.regexInFastFood)
+        match = re.search(regexStringFastFood, line)
+        if match:
+            orderInfoList[5] = match.group(1) #customer's name
+            orderInfoList[6] = match.group(2) #customer's phone
+            orderInfoList[8] = match.group(3) #customer's address
+            orderInfoList[3] = match.group(7)+' '+match.group(8)
+            orderInfoList[4] = match.group(4) #restaurant name
+            foodInfoList[0]  = match.group(5) #foodname
+            orderInfoList[2] = [foodInfoList] #foodInfoList. need to list of list
+            orderInfoList[1] = match.group(7)+' '+ match.group(6) #requested delivery time
+
+        megaOrderList = [orderInfoList]
+        kedaiHippo = 1
+    ######Done handling for fast food delivery
     else:
         orderInfoList=['no match']*9
         megaOrderList=[orderInfoList]
         kedaiHippo = 0
-
 
     return kedaiHippo, megaOrderList
 
@@ -128,7 +153,7 @@ def getRestaurantInfo(restaurantInfo):
     if found:
         restaurantInfoList = [name,address,pic,phoneNum]
     else:
-        restaurantInfoList = addRestaurant()
+        restaurantInfoList = [restaurantInfo,None,None,None]
     return restaurantInfoList
 
 """

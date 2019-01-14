@@ -34,40 +34,55 @@ def findRestaurant(key):
     return restaurantName
 
 def genMasterOrderList(orderInfoList, restaurantName, orderFileName, tag):
-    if restaurantName == 'Hippo Food Delivery':
-        firstFood = orderInfoList[2][0][0]
-        match = re.search(r".*\((.*)\)",firstFood)
-        restaurantKey = match.group(1)
-        restaurantName = findRestaurant(restaurantKey)
+    #####Handling for fast food delivery
+    if orderFileName.find('type2') != -1: #fast food
+        chargeList = getChargeDetail('fast food')
+        chargeType = int(chargeList[0])
+        deliveryCharge = float(chargeList[-1])
+        chargeToShop = float(chargeList[chargeType])
 
-    chargeList = getChargeDetail(restaurantName)
-    chargeType = int(chargeList[0])
-    deliveryCharge = float(chargeList[-1])
-    chargeToShop = float(chargeList[chargeType]) #charge to kedai varies depends on charge type
-    #print(chargeType,chargeToShop,deliveryCharge)
+        foodSummary = orderInfoList[2][0]
+        totalFoodQuantity = None
+        totalFoodPrice = None
+        chargeToCustomer = None
+        payToShop = None
+    ######Done handling for fast food delivery
+    else:
+        if restaurantName == 'Hippo Food Delivery':
+            firstFood = orderInfoList[2][0][0]
+            #print(firstFood)
+            match = re.search(r".*\((.*)\)",firstFood)
+            restaurantKey = match.group(1)
+            restaurantName = findRestaurant(restaurantKey)
 
-    #calculate total food price and quantity, and generate food summary
-    totalFoodPrice = 0
-    totalFoodQuantity = 0
-    foodSummary=''
-    for i, foodItem in enumerate(orderInfoList[2]):
-        food = foodItem[0]
-        unitPrice = float(foodItem[1])
-        #print(unitPrice)
-        quantity = int(foodItem[2])
-        totalPrice = unitPrice*quantity
-        #print(totalPrice)
-        totalFoodQuantity+=quantity
-        totalFoodPrice+=totalPrice
-        if i > 0:
-            spacer='; '
-        else:
-            spacer=''
-        foodSummary+=spacer+str(quantity)+'x '+food
-    chargeToCustomer = totalFoodPrice + deliveryCharge
-    if chargeType == 2: #we charge kedai per pack for type 2
-        chargeToShop = chargeToShop*totalFoodQuantity
-    payToShop = totalFoodPrice - chargeToShop
+        chargeList = getChargeDetail(restaurantName)
+        chargeType = int(chargeList[0])
+        deliveryCharge = float(chargeList[-1])
+        chargeToShop = float(chargeList[chargeType]) #charge to kedai varies depends on charge type
+        #print(chargeType,chargeToShop,deliveryCharge)
+
+        #calculate total food price and quantity, and generate food summary
+        totalFoodPrice = 0
+        totalFoodQuantity = 0
+        foodSummary=''
+        for i, foodItem in enumerate(orderInfoList[2]):
+            food = foodItem[0]
+            unitPrice = float(foodItem[1])
+            #print(unitPrice)
+            quantity = int(foodItem[2])
+            totalPrice = unitPrice*quantity
+            #print(totalPrice)
+            totalFoodQuantity+=quantity
+            totalFoodPrice+=totalPrice
+            if i > 0:
+                spacer='; '
+            else:
+                spacer=''
+            foodSummary+=spacer+str(quantity)+'x '+food
+        chargeToCustomer = totalFoodPrice + deliveryCharge
+        if chargeType == 2: #we charge kedai per pack for type 2
+            chargeToShop = chargeToShop*totalFoodQuantity
+        payToShop = totalFoodPrice - chargeToShop
 
     dummyList=orderInfoList.copy()
     del dummyList[2] #delete food list from master list. replace with summary
@@ -78,7 +93,8 @@ def genMasterOrderList(orderInfoList, restaurantName, orderFileName, tag):
     orderID = float(masterOrderList[0])
     if orderID <= 1892380:
         #print('date reformatting required')
-        masterOrderList[1], masterOrderList[2] = reformatDate(masterOrderList[1], masterOrderList[2])
+        masterOrderList[1] = reformatDate(masterOrderList[1])
+        masterOrderList[2] = reformatDate(masterOrderList[2])
 
     return masterOrderList
 
@@ -96,7 +112,7 @@ def genMasterFoodList(orderID, restaurantName, foodInfoList, orderFileName, tag)
         item.extend([orderFileName,tag])
     return dummyList
 
-def pushToCsv(masterOrderList, masterFoodList):
+def pushToCsv(pushTo, masterOrderList, masterFoodList):
     with open(globalParam.orderDataFile, 'a', newline='') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(masterOrderList)
@@ -106,28 +122,28 @@ def pushToCsv(masterOrderList, masterFoodList):
             wr.writerow(item)
     return
 
-def reformatDate(date1, date2):
-    match = re.search(r"(\d+)\/(\d+)(.*)",date1)
+def reformatDate(oldDate):
+    """
+    reformat date from MM/DD/YYYY -> DD/MM/YYYY
+    """
+    match = re.search(r"(\d+)\/(\d+)(.*)",oldDate)
     if match:
-        newDate1 = match.group(2)+'/'+match.group(1)+match.group(3)
-    match = re.search(r"(\d+)\/(\d+)(.*)",date2)
-    if match:
-        newDate2 = match.group(2)+'/'+match.group(1)+match.group(3)
-    return newDate1, newDate2
+        newDate = match.group(2)+'/'+match.group(1)+match.group(3)
+    return newDate
 
 """
-orderInfoList=['1898054', '02/01/2019 12:30 PM', [['Set Asam Pedas (MT)', '7.00', '1', ' '], ['Nasi Ayam Kunyit (NK)', '7.00', '1', ' ']], '02/01/2019 11:10 AM', "Hippo Food Delivery (Mangkuk Tingkat (MT)/Nan's Kitchen(NK)/Tapoou (TP)) Bertamlakeside , Kepala Batas, Penang, Malaysia", 'nurul nadiah azmi', '01114430036', 'yon.paan@yahoo.com', 'no 55 g jalan dagangan 10 no 5 g']
-foodInfoList=[['Set Asam Pedas (MT)', '7.00', '1', ' '], ['Nasi Ayam Kunyit (NK)', '7.00', '1', ' ']]
-restaurantInfoList=['Hippo Food Delivery', 'Bertamlakeside , Kepala Batas, Penang, Malaysia', '', '']
-customerInfoList=['nurul nadiah azmi', '01114430036', 'yon.paan@yahoo.com', 'no 55 g jalan dagangan 10 no 5 g']
-orderFileName = 'new_order_01012019.010636.html.txt'
+orderFileName = 'new_order_10012019.223457.html.txt'
+orderInfoList = ['1915725', '10/01/2019 12:30 PM', [['Set Nasi Daging Blackpapper', '7.00', '1', ' '], ['Nasi Tomyam (NK)', '7.00', '1', ' ']], '10/01/2019 10:49 AM', "Hippo Food Delivery (Mangkuk Tingkat (MT)/Nan's Kitchen(NK)/Tapoou (TP)) Bertamlakeside , Kepala Batas, Penang, Malaysia", 'Nur Aliah', '01139476473', 'nuraliah93@gmail.com', 'NO 31,LORONG BERTAM INDAH 45, TAMAN BERTAM INDAH, 13200 KEPALA BATAS, PULAU PINANG Floor']
+foodInfoList = [['Set Nasi Daging Blackpapper', '7.00', '1', ' '], ['Nasi Tomyam (NK)', '7.00', '1', ' ']]
+restaurantInfoList = ['Hippo Food Delivery', 'Bertamlakeside , Kepala Batas, Penang, Malaysia', 'none', 'none']
+customerInfoList = ['Nur Aliah', '01139476473', 'nuraliah93@gmail.com', 'NO 31,LORONG BERTAM INDAH 45, TAMAN BERTAM INDAH, 13200 KEPALA BATAS, PULAU PINANG Floor']
 tag=''
 
 masterOrderList = genMasterOrderList(orderInfoList, restaurantInfoList[0], orderFileName, tag)
 masterFoodList = genMasterFoodList(orderInfoList[0], restaurantInfoList[0], foodInfoList, orderFileName, tag)
-print('masterOrderList:')
+print('masterOrderList = ', end='')
 print(masterOrderList)
-print('masterFoodList:')
+print('masterFoodList = ', end='')
 print(masterFoodList)
 #pushToCsv(masterOrderList,masterFoodList)
 """

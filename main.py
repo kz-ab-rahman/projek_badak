@@ -1,66 +1,119 @@
 #!python3
 
-
 #goto https://myaccount.google.com/lesssecureapps, turn on less secure app access
-import imaplib, time, re, linecache, sys, getpass, msvcrt
+import imaplib, time, sys, getpass, msvcrt
+from datetime import datetime, timedelta
 import globalParam, dataProcessing, dataExtraction, emailScraper, msgGenerator
 
 argList = str(sys.argv)
 
-usernm = 'hippofooddelivery@gmail.com'
-serverName = 'imap.gmail.com'
-emailFolder = 'Inbox'
-checkInterval = 10 #seconds
-
 while True:
-    print('\nUsername: '+'\x1b[6;30;42m'+usernm+'\x1b[0m')
+    print('\nUsername: '+'\x1b[6;30;42m'+globalParam.usernm+'\x1b[0m')
     passwd = getpass.getpass("Enter password or hit [ENTER] to change Username: ")
     if passwd == '':
-        usernm = input("Username: ")
+        globalParam.usernm = input("Username: ")
     else:
         break
 
 #login to email account
-mail = imaplib.IMAP4_SSL(serverName)
+mail = imaplib.IMAP4_SSL(globalParam.serverName)
 print('\nLogging into email account...')
 try:
-    mail.login(usernm,passwd)
+    mail.login(globalParam.usernm,passwd)
 except:
     print('[ERROR] Invalid credientials!')
     exit()
 
 #select email folder
-status, messages = mail.select(emailFolder)
+status, messages = mail.select(globalParam.emailFolder)
 #check whether email folder exist
 if status != "OK":
-    print('[ERROR] Email folder \"'+emailFolder+'\" does not exist!')
+    print('[ERROR] Email folder \"'+globalParam.emailFolder+'\" does not exist!')
     exit()
 
 #admin can add tag here
 tag = input('Add tag OR hit [ENTER] for no tag: ')
-print('\n')
+
+#select email search mode
+validOptions = [1,2,3,4]
+searchMode = 0
+while searchMode not in validOptions:
+    print('\nSelect email search mode:')
+    print('  [1] Unread')
+    print('  [2] Date: SINCE -> BEFORE')
+    print('  [3] Date: Today ('+datetime.now().strftime('%d-%m-%y')+')')
+    print('  [4] Date: Yesterday ('+(datetime.now() - timedelta(days=1)).strftime('%d-%m-%y')+')')
+    print('  [5] From (not working yet)')
+    searchMode = int(input('Search mode: '))
+    if searchMode not in validOptions:
+        print("ERROR: Invalid option.")
+
+if searchMode == 2:
+    #http://strftime.org/
+    while True: #stuck here until correct date format is obtained
+        sinceDate = input('\nEnter SINCE date (dd-mm-yy): ')
+        beforeDate = input('Enter BEFORE date (dd-mm-yy): ')
+        try:
+            sinceDateObj = datetime.strptime(sinceDate, "%d-%m-%y")
+            beforeDateObj = datetime.strptime(beforeDate, "%d-%m-%y")
+            break
+        except Exception as e:
+            print('ERROR: '+str(e))
+
+    #convert to date format understandable by imap module
+    since = sinceDateObj.strftime("%d-%b-%Y")
+    before = beforeDateObj.strftime("%d-%b-%Y")
+
+elif searchMode == 3:
+    since = datetime.now().strftime('%d-%b-%Y') #today
+    before = (datetime.now() + timedelta(days=1)).strftime('%d-%b-%Y') #tomorrow
+
+elif searchMode == 4:
+    since = (datetime.now() - timedelta(days=1)).strftime('%d-%b-%Y') #yesterday
+    before = datetime.now().strftime('%d-%b-%Y') #today
+
+else:
+    since = 0
+    before = 0
 
 #MAIN LOOP starts here
+if 'runloop' in argList:
+    runLoop = True
+else:
+    runLoop = False
+
 while True:
-    newEmail = False
-    while newEmail == False: #will loop here until new email available
-        print('Checking for new email...')
-        emailList = emailScraper.getNewEmail(mail)
+    foundEmail = False
+    while not foundEmail: #will loop here until email with selected criteria is found
+        print('Searching for email...')
+        emailList = emailScraper.getNewEmail(mail, searchMode, since, before)
         if len(emailList) > 0:
-            newEmail = True
-            print(str(len(emailList)) + ' new email(s)')
+            foundEmail = True
+            print(str(len(emailList)) + ' email(s) found')
         else:
-            print('No new email. Next email check in ' + str(checkInterval) +'sec...')
-            print('CTRL+C to stop automation\n')
-            time.sleep(checkInterval)
+            print('No email found')
+            if runLoop:
+                print('Next email check in ' + str(globalParam.checkInterval) +'sec...')
+                print('CTRL+C to stop loop\n')
+                time.sleep(globalParam.checkInterval)
+            else:
+                break
 
     newOrderFileList = emailScraper.getNewOrder(mail,emailList)
-    #print(newOrderFileList)
-    newOrderNum = len(newOrderFileList)
-    for num, orderFileName in enumerate(newOrderFileList):
+
+    if 'debug' in argList:
+        print('newOrderFileList = ', end='')
+        print(newOrderFileList)
+
+    for orderFileName in newOrderFileList:
         #flatten the raw email to simplify regex search
         dataExtraction.flattenRawEmail(orderFileName)
+
     for orderFileName in newOrderFileList:
+        ###temporary skip fast food (filename has 'type2' in it)
+        if orderFileName.find('type2') != -1:
+            pass
+        ###
         #Extract order information from the flatten raw email
         numOfKedai, megaOrderList = dataExtraction.getOrderInfo(orderFileName)
         for orderInfoList in megaOrderList:
@@ -70,41 +123,53 @@ while True:
                 print('No matching restaurant found. Cannot proceed!')
                 exit()
             customerInfoList = orderInfoList[-4:]
-            """
-            print('\nOrder Details for '+orderFileName+': ')
-            print('orderInfoList:')
-            print(orderInfoList)
-            print('foodInfoList:')
-            print(foodInfoList)
-            print('restaurantInfoList:')
-            print(restaurantInfoList)
-            print('customerInfoList:')
-            print(customerInfoList)
-            """
+
+            if 'debug' in argList:
+                print('\nOrder Details:')
+                print('orderFileName = ', end='')
+                print("'"+orderFileName+"'")
+                print('orderInfoList = ', end='')
+                print(orderInfoList)
+                print('foodInfoList = ', end='')
+                print(foodInfoList)
+                print('restaurantInfoList = ', end='')
+                print(restaurantInfoList)
+                print('customerInfoList = ', end='')
+                print(customerInfoList)
+
             #Data Processing
+            #TODO: <add app or webapp> tag = dataExtraction.getOrderTool(orderFileName)+';'+tag
             masterOrderList = dataProcessing.genMasterOrderList(orderInfoList, restaurantInfoList[0], orderFileName, tag)
             masterFoodList = dataProcessing.genMasterFoodList(orderInfoList[0], restaurantInfoList[0], foodInfoList, orderFileName, tag)
-            print('masterOrderList:')
+            print('masterOrderList = ', end='')
             print(masterOrderList)
-            print('masterFoodList:')
+            print('masterFoodList = ', end='')
             print(masterFoodList)
 
-            if 'updatecsv' in argList:
-                #Push to csv
-                print("Pushing data to csv...")
-                dataProcessing.pushToCsv(masterOrderList, masterFoodList)
+            if 'updatecsvmaster' in argList:
+                pushTo = 'master'
+                print("Pushing data to master csv...")
+                dataProcessing.pushToCsv(pushTo, masterOrderList, masterFoodList)
 
-            if 'sendmsg' in argList:
-                #generate Text Msg
+            if 'updatecsvdaily' in argList:
+                pushTo = 'daily'
+                print("Pushing data to daily csv...")
+                dataProcessing.pushToCsv(pushTo, masterOrderList, masterFoodList)
+
+            if 'genmsg' in argList:
                 print("Generating text messages...")
                 msgToRider, msgToKedai = msgGenerator.genTextMsg(masterOrderList, masterFoodList, orderNum=1, rider='?')
-                print("Sending test messages...")
                 print(msgToRider)
                 print(msgToKedai)
 
-    print('\nNew order successfully added. Next email check in ' + str(checkInterval) +'sec...')
-    print('CTRL+C to stop automation\n')
-    time.sleep(checkInterval)
+    if foundEmail:
+        print('\nNew order successfully added')
+    if runLoop:
+        print('Next email check in ' + str(globalParam.checkInterval) +'sec...')
+        print('CTRL+C to stop loop\n')
+        time.sleep(globalParam.checkInterval)
+    else:
+        break
 
 
 
