@@ -35,13 +35,13 @@ def findRestaurant(key):
 
 def genMasterOrderList(orderInfoList, restaurantName, orderFileName, tag):
     #####Handling for fast food delivery
-    if orderFileName.find('type2') != -1: #fast food
+    if orderFileName.find('type3') != -1: #fast food
         chargeList = getChargeDetail('fast food')
         chargeType = int(chargeList[0])
         deliveryCharge = float(chargeList[-1])
         chargeToShop = float(chargeList[chargeType])
 
-        foodSummary = orderInfoList[2][0]
+        foodSummary = orderInfoList[2][0][0]
         totalFoodQuantity = None
         totalFoodPrice = None
         chargeToCustomer = None
@@ -101,6 +101,7 @@ def genMasterOrderList(orderInfoList, restaurantName, orderFileName, tag):
 def genMasterFoodList(orderID, restaurantName, foodInfoList, orderFileName, tag):
     if restaurantName == 'Hippo Food Delivery':
         firstFood = foodInfoList[0][0]
+        #print(firstFood)
         match = re.search(r".*\((.*)\)",firstFood)
         restaurantKey = match.group(1)
         restaurantName = findRestaurant(restaurantKey)
@@ -113,10 +114,20 @@ def genMasterFoodList(orderID, restaurantName, foodInfoList, orderFileName, tag)
     return dummyList
 
 def pushToCsv(pushTo, masterOrderList, masterFoodList):
-    with open(globalParam.orderDataFile, 'a', newline='') as myfile:
+    #trakcingList = [status,rider,pickup_actual,deliver_actual]
+    trackingList = ['new','not assigned',None,None]
+    if pushTo == 'master':
+        orderDataFile = globalParam.orderDataFile
+        foodDataFile = globalParam.foodDataFile
+    if pushTo == 'daily':
+        orderDataFile = globalParam.dailyOrderDataFile
+        foodDataFile = globalParam.dailyFoodDataFile
+        masterOrderList.extend(trackingList) #append trakcingList before writing to file
+
+    with open(orderDataFile, 'a+', newline='') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(masterOrderList)
-    with open(globalParam.foodDataFile, 'a', newline='') as myfile:
+    with open(foodDataFile, 'a+', newline='') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         for item in masterFoodList:
             wr.writerow(item)
@@ -131,13 +142,13 @@ def reformatDate(oldDate):
         newDate = match.group(2)+'/'+match.group(1)+match.group(3)
     return newDate
 
-"""
-orderFileName = 'new_order_10012019.223457.html.txt'
-orderInfoList = ['1915725', '10/01/2019 12:30 PM', [['Set Nasi Daging Blackpapper', '7.00', '1', ' '], ['Nasi Tomyam (NK)', '7.00', '1', ' ']], '10/01/2019 10:49 AM', "Hippo Food Delivery (Mangkuk Tingkat (MT)/Nan's Kitchen(NK)/Tapoou (TP)) Bertamlakeside , Kepala Batas, Penang, Malaysia", 'Nur Aliah', '01139476473', 'nuraliah93@gmail.com', 'NO 31,LORONG BERTAM INDAH 45, TAMAN BERTAM INDAH, 13200 KEPALA BATAS, PULAU PINANG Floor']
-foodInfoList = [['Set Nasi Daging Blackpapper', '7.00', '1', ' '], ['Nasi Tomyam (NK)', '7.00', '1', ' ']]
-restaurantInfoList = ['Hippo Food Delivery', 'Bertamlakeside , Kepala Batas, Penang, Malaysia', 'none', 'none']
-customerInfoList = ['Nur Aliah', '01139476473', 'nuraliah93@gmail.com', 'NO 31,LORONG BERTAM INDAH 45, TAMAN BERTAM INDAH, 13200 KEPALA BATAS, PULAU PINANG Floor']
+
 tag=''
+orderFileName = 'type0_14012019.233937.html.txt'
+orderInfoList = ['1926717', '14/01/2019 2:25 PM', [['Nasi Briyani Daging', '10.00', '1', ' '], ['Nasi Briyani Chicken Buttermilk', '12.00', '1', ' ']], '14/01/2019 1:23 PM', "D'Biryani Hyderabad  Persiaran Seksyen 4/8, Bandar Putra Bertam, 13200 Kepala Batas, Pulau Pinang, Malaysia", 'Emy Marhainis', '0103837765', 'iffah.mohamed@gmail.com', 'No.11 Lorong Limonia 8 Bertam lakeside']
+foodInfoList = [['Nasi Briyani Daging', '10.00', '1', ' '], ['Nasi Briyani Chicken Buttermilk', '12.00', '1', ' ']]
+restaurantInfoList = ["D'Biryani Hyderabad", 'Persiaran Seksyen 4/8, Bandar Putra Bertam, 13200 Kepala Batas, Pulau Pinang, Malaysia', 'Hazieq', '60194970371']
+customerInfoList = ['Emy Marhainis', '0103837765', 'iffah.mohamed@gmail.com', 'No.11 Lorong Limonia 8 Bertam lakeside']
 
 masterOrderList = genMasterOrderList(orderInfoList, restaurantInfoList[0], orderFileName, tag)
 masterFoodList = genMasterFoodList(orderInfoList[0], restaurantInfoList[0], foodInfoList, orderFileName, tag)
@@ -145,5 +156,6 @@ print('masterOrderList = ', end='')
 print(masterOrderList)
 print('masterFoodList = ', end='')
 print(masterFoodList)
-#pushToCsv(masterOrderList,masterFoodList)
-"""
+pushTo = 'daily'
+print("Pushing data to master csv...")
+pushToCsv(pushTo, masterOrderList,masterFoodList)

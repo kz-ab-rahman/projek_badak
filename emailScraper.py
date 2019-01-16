@@ -79,11 +79,11 @@ def getNewOrder(mail,emailList):
                     md5Old = md5New
                     time.sleep(1) #delay 1sec to ensure unique filename bcoz we use time as filename
                     timeStamp = time.strftime("%d%m%Y")+"."+time.strftime("%H%M%S")
-                    if orderType == 2: #fast food
+                    if orderType == 3: #fast food
                         pattern = "(\d+)" #get the formID
                         match = re.search(pattern,subject)
                         formID = match.group(1)
-                        fileName = 'type2'+'_'+timeStamp+'_formID'+formID+'.html.txt'
+                        fileName = 'type3'+'_'+timeStamp+'_formID'+formID+'.html.txt'
                     else:
                         fileName = 'type'+str(orderType)+'_'+timeStamp+'.html.txt'
 

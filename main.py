@@ -5,7 +5,15 @@ import imaplib, time, sys, getpass, msvcrt
 from datetime import datetime, timedelta
 import globalParam, dataProcessing, dataExtraction, emailScraper, msgGenerator
 
-argList = str(sys.argv)
+argList = sys.argv
+#print(argList)
+for arg in argList:
+    if arg not in globalParam.validArgList:
+        print(f"ERROR: '{arg}' is not a valid argument!")
+        print("List of valid arguments: ",end='')
+        for validArg in globalParam.validArgList:
+            print(validArg+' ', end='')
+        exit()
 
 while True:
     print('\nUsername: '+'\x1b[6;30;42m'+globalParam.usernm+'\x1b[0m')
@@ -48,7 +56,7 @@ while searchMode not in validOptions:
     if searchMode not in validOptions:
         print("ERROR: Invalid option.")
 
-if searchMode == 2:
+if searchMode == 2: #SINCE -> BEFORE
     #http://strftime.org/
     while True: #stuck here until correct date format is obtained
         sinceDate = input('\nEnter SINCE date (dd-mm-yy): ')
@@ -64,11 +72,11 @@ if searchMode == 2:
     since = sinceDateObj.strftime("%d-%b-%Y")
     before = beforeDateObj.strftime("%d-%b-%Y")
 
-elif searchMode == 3:
+elif searchMode == 3: #TODAY
     since = datetime.now().strftime('%d-%b-%Y') #today
     before = (datetime.now() + timedelta(days=1)).strftime('%d-%b-%Y') #tomorrow
 
-elif searchMode == 4:
+elif searchMode == 4: #YESTERDAY
     since = (datetime.now() - timedelta(days=1)).strftime('%d-%b-%Y') #yesterday
     before = datetime.now().strftime('%d-%b-%Y') #today
 
@@ -110,24 +118,27 @@ while True:
         dataExtraction.flattenRawEmail(orderFileName)
 
     for orderFileName in newOrderFileList:
-        ###temporary skip fast food (filename has 'type2' in it)
-        if orderFileName.find('type2') != -1:
-            pass
-        ###
         #Extract order information from the flatten raw email
+        if 'debug' in argList:
+            print('\nOrder Details:')
+            print('orderFileName = ', end='')
+            print("'"+orderFileName+"'")
+
         numOfKedai, megaOrderList = dataExtraction.getOrderInfo(orderFileName)
+        if 'debug' in argList:
+            print('megaOrderList = ',end='')
+            print(megaOrderList)
+
         for orderInfoList in megaOrderList:
             foodInfoList = orderInfoList[2]
             restaurantInfoList = dataExtraction.getRestaurantInfo(orderInfoList[4])
+            print(restaurantInfoList)
             if restaurantInfoList[0] == 'no match':
-                print('No matching restaurant found. Cannot proceed!')
+                print('ERROR: No matching restaurant found. Cannot proceed!')
                 exit()
             customerInfoList = orderInfoList[-4:]
 
             if 'debug' in argList:
-                print('\nOrder Details:')
-                print('orderFileName = ', end='')
-                print("'"+orderFileName+"'")
                 print('orderInfoList = ', end='')
                 print(orderInfoList)
                 print('foodInfoList = ', end='')

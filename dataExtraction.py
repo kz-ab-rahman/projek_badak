@@ -25,11 +25,13 @@ def flattenRawEmail(orderFileName):
     return
 
 def getOrderInfo(orderFileName):
+    #print("inside getOrderInfo")
     line = linecache.getline(globalParam.rawEmailPath+orderFileName, 1)
     regexStringOrder = re.compile(globalParam.regexInOrder)
     regexStringFood = re.compile(globalParam.regexInFood)
 
     match = re.search(regexStringOrder, line)
+    #print(match)
     if match:
         orderInfoList = list(match.groups())
         #print('orderInfoList[2]: '+orderInfoList[2])
@@ -90,7 +92,7 @@ def getOrderInfo(orderFileName):
             megaOrderList=[orderInfoList]
             kedaiHippo=1
     ######handling for fast food delivery
-    elif orderFileName.find('type2') != -1: #fast food delivery (type2) handler
+    elif orderFileName.find('type3') != -1: #fast food delivery (type2) handler
         orderInfoList=[None]*9
         foodInfoList=[None]*4
         match = re.search(r"formID(\d+)",orderFileName) #extract formID from the filename
@@ -135,6 +137,8 @@ def addRestaurant():
     return [name,address,pic,phoneNum]
 
 def getRestaurantInfo(restaurantInfo):
+    #print("inside getRestaurant")
+    #print(restaurantInfo)
     with open(globalParam.restaurantDataFile, 'r') as file:
         next(file) #skip csv header
         reader = csv.reader(file)
@@ -154,24 +158,38 @@ def getRestaurantInfo(restaurantInfo):
         restaurantInfoList = [name,address,pic,phoneNum]
     else:
         restaurantInfoList = [restaurantInfo,None,None,None]
+    #print(restaurantInfoList)
     return restaurantInfoList
 
 """
-orderFileName = 'new_order_03012019.094058.html.txt'
+orderFileName = 'type0_14012019.233937.html.txt'
+tag=''
 #flattenRawEmail(orderFileName)
 numOfKedai, megaOrderList = getOrderInfo(orderFileName)
-print('\nOrder Details for '+orderFileName+': ')
 for orderInfoList in megaOrderList:
     foodInfoList = orderInfoList[2]
     restaurantInfoList = getRestaurantInfo(orderInfoList[4])
     customerInfoList = orderInfoList[-4:]
 
-    print('orderInfoList:')
+    print('\nOrder Details:')
+    print('orderFileName = ', end='')
+    print("'"+orderFileName+"'")
+    print('orderInfoList = ', end='')
     print(orderInfoList)
-    print('foodInfoList:')
+    print('foodInfoList = ', end='')
     print(foodInfoList)
-    print('restaurantInfoList:')
+    print('restaurantInfoList = ', end='')
     print(restaurantInfoList)
-    print('customerInfoList:')
+    print('customerInfoList = ', end='')
     print(customerInfoList)
+
+    masterOrderList = dataProcessing.genMasterOrderList(orderInfoList, restaurantInfoList[0], orderFileName, tag)
+    masterFoodList = dataProcessing.genMasterFoodList(orderInfoList[0], restaurantInfoList[0], foodInfoList, orderFileName, tag)
+    print('masterOrderList = ', end='')
+    print(masterOrderList)
+    print('masterFoodList = ', end='')
+    print(masterFoodList)
+    pushTo = 'master'
+    print("Pushing data to master csv...")
+    dataProcessing.pushToCsv(pushTo, masterOrderList, masterFoodList)
 """
