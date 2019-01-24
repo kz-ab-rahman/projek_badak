@@ -1,13 +1,13 @@
 import time, linecache, csv
-import globalParam
+import global_param
 
 
 
 def getLatestOrder(lastOrderID):
     dailyOrderDataFile = time.strftime("%b%d-%Y")+'_order_data.csv'
-    #print(dailyOrderDataFile)
+    #print(daily_order_data_file)
     lastLine = None
-    with open(globalParam.dailyOrderPath+dailyOrderDataFile, 'r') as file:
+    with open(global_param.daily_path + dailyOrderDataFile, 'r') as file:
         next(file) #skip csv header
         reader = csv.reader(file)
         for line in reader:
@@ -27,9 +27,9 @@ print(getLatestOrder(123))
 
 """
 
-dailyFoodDataFile = time.strftime("%b%d-%Y")+'_food_data.csv'
-count = len(open(globalParam.dailyOrderPath+dailyOrderDataFile).readlines())
+daily_food_data_file = time.strftime("%b%d-%Y")+'_food_data.csv'
+count = len(open(globalParam.daily_path+daily_order_data_file).readlines())
 print(count)
-count = len(open(globalParam.dailyOrderPath+dailyFoodDataFile).readlines())
+count = len(open(globalParam.daily_path+daily_food_data_file).readlines())
 print(count)
 """

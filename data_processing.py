@@ -1,12 +1,12 @@
 #!python3
 import csv
 import re
-import globalParam
+import global_param
 
 
 def get_charge_detail(restaurant_name):
     charge_list = []
-    with open(globalParam.shop_data_file, 'r') as file:
+    with open(global_param.shop_data_file, 'r') as file:
         next(file)  # skip csv header
         reader = csv.reader(file)
         found = False
@@ -18,12 +18,14 @@ def get_charge_detail(restaurant_name):
             else:
                 pass
     if not found:
+        print(f"\nERROR: {restaurant_name} not in the list")
         charge_list = -1
+        exit()
     return charge_list
 
 
 def find_restaurant(key):
-    with open(globalParam.shop_data_file, 'r') as file:
+    with open(global_param.shop_data_file, 'r') as file:
         next(file)  # skip csv header
         reader = csv.reader(file)
         for line in reader:
@@ -120,14 +122,17 @@ def gen_master_food_list(order_id, restaurant_name, food_info_list, order_file_n
 
 
 def push_to_csv(push_to, master_order_list, master_food_list):
-    # tracking_list = [status,rider,pickup_actual,deliver_actual]
-    tracking_list = ['new', 'not assigned', None, None]
+    # tracking_list = [order_num, status, rider_name, pickup_actual, deliver_actual]
+    tracking_list = ['not assigned', 'new', 'not assigned', None, None]
+    if push_to == 'unit_test':
+        order_data_file = global_param.unit_test_order_data_file
+        food_data_file = global_param.unit_test_food_data_file
     if push_to == 'master':
-        order_data_file = globalParam.order_data_file
-        food_data_file = globalParam.food_data_file
+        order_data_file = global_param.master_order_data_file
+        food_data_file = global_param.master_food_data_file
     if push_to == 'daily':
-        order_data_file = globalParam.daily_order_data_file
-        food_data_file = globalParam.daily_food_data_file
+        order_data_file = global_param.daily_order_data_file
+        food_data_file = global_param.daily_food_data_file
         master_order_list.extend(tracking_list)  # append tracking_list before writing to file
 
     with open(order_data_file, 'a+', newline='') as my_file:
@@ -147,22 +152,33 @@ def reformat_date(old_date):
     match = re.search(r"(\d+)\/(\d+)(.*)", old_date)
     if match:
         new_date = match.group(2) + '/' + match.group(1) + match.group(3)
+    else:
+        print('ERROR: cannot reformat data')
+        exit()
     return new_date
 
 
-tag = ''
-order_file_name = 'type0_14012019.233937.html.txt'
-order_info_list = ['1926717', '14/01/2019 2:25 PM', [['Nasi Briyani Daging', '10.00', '1', ' '], ['Nasi Briyani Chicken Buttermilk', '12.00', '1', ' ']], '14/01/2019 1:23 PM', "D'Biryani Hyderabad  Persiaran Seksyen 4/8, Bandar Putra Bertam, 13200 Kepala Batas, Pulau Pinang, Malaysia", 'Emy Marhainis', '0103837765', 'iffah.mohamed@gmail.com', 'No.11 Lorong Limonia 8 Bertam lakeside']
-food_info_list = [['Nasi Briyani Daging', '10.00', '1', ' '], ['Nasi Briyani Chicken Buttermilk', '12.00', '1', ' ']]
-restaurant_info_list = ["D'Biryani Hyderabad", 'Persiaran Seksyen 4/8, Bandar Putra Bertam, 13200 Kepala Batas, Pulau Pinang, Malaysia', 'Hazieq', '60194970371']
-customer_info_list = ['Emy Marhainis', '0103837765', 'iffah.mohamed@gmail.com', 'No.11 Lorong Limonia 8 Bertam lakeside']
+if __name__ == '__main__':
+    tag = ''
+    orderFileName = 'type0_24012019.110811.html.txt'
+    orderInfoList = ['1946617', '23/01/2019 5:30 PM', [
+        ['Kerabu Mangga/Sotong/Jejari Ayam/Somtam Betik/Somtam Seafood (Kerabu Mangga)', '6.00', '1', ' '],
+        ['Tom Yam Ayam/Campur/Pok Tek (Tom Yam Campur)', '8.00', '1', ' '],
+        ['Telur Bistik/Bungkus/Dadar (Telur Bungkus)', '5.00', '1', ' ']], '23/01/2019 10:10 AM',
+                     'Kafe Mae Thai  Jalan Dagangan 8, 13200 Kepala Batas, Pulau Pinang, Malaysia', 'Dummy Order',
+                     '1234', 'iffah.mohamed@gmail.com', 'xyz ']
+    foodInfoList = [['Kerabu Mangga/Sotong/Jejari Ayam/Somtam Betik/Somtam Seafood (Kerabu Mangga)', '6.00', '1', ' '],
+                    ['Tom Yam Ayam/Campur/Pok Tek (Tom Yam Campur)', '8.00', '1', ' '],
+                    ['Telur Bistik/Bungkus/Dadar (Telur Bungkus)', '5.00', '1', ' ']]
+    shopInfoList = ['Kafe Mae Thai', 'Jalan Dagangan 8, 13200 Kepala Batas, Pulau Pinang, Malaysia', 'none', 'none']
+    customerInfoList = ['Dummy Order', '1234', 'iffah.mohamed@gmail.com', 'xyz ']
 
-master_order_list = gen_master_order_list(order_info_list, restaurant_info_list[0], order_file_name, tag)
-master_food_list = gen_master_food_list(order_info_list[0], restaurant_info_list[0], food_info_list, order_file_name, tag)
-print('master_order_list = ', end='')
-print(master_order_list)
-print('master_food_list = ', end='')
-print(master_food_list)
-push_to = 'daily'
-print("Pushing data to master csv...")
-# push_to_csv(push_to, master_order_list, master_food_list)
+    masterOrderList = gen_master_order_list(orderInfoList, shopInfoList[0], orderFileName, tag)
+    masterFoodList = gen_master_food_list(orderInfoList[0], shopInfoList[0], foodInfoList, orderFileName, tag)
+    print('masterOrderList = ', end='')
+    print(masterOrderList)
+    print('masterFoodList = ', end='')
+    print(masterFoodList)
+    pushTo = 'unit_test'
+    print(f"Pushing data to {pushTo} csv...")
+    push_to_csv(pushTo, masterOrderList, masterFoodList)

@@ -43,21 +43,21 @@ Pesanan:"
     return
 
 
-def gen_text_msg(master_order_list, master_food_list, order_num, rider):
+def gen_text_msg(msg_target, master_order_list, master_food_list, order_num, rider):
     order_id = master_order_list[0]
     delivery_time = master_order_list[1]
-    orderTime = master_order_list[2]
+    # orderTime = masterOrderList[2]
     shop = master_order_list[3]
     customer_name = master_order_list[4]
     customer_phone = master_order_list[5]
-    customer_email = master_order_list[6]
+    # customer_email = masterOrderList[6]
     customer_address = master_order_list[7]
     total_pack = master_order_list[9]
-    charge_type = master_order_list[10]
-    total_food_price = master_order_list[11]
+    # charge_type = masterOrderList[10]
+    # total_food_price = masterOrderList[11]
     delivery_charge = master_order_list[12]
-    colect_from_customer = master_order_list[13]
-    charge_to_shop = master_order_list[14]
+    collect_from_customer = master_order_list[13]
+    # charge_to_shop = masterOrderList[14]
     pay_to_shop = master_order_list[15]
 
     # calculate pick-up time
@@ -76,7 +76,7 @@ def gen_text_msg(master_order_list, master_food_list, order_num, rider):
         print(f"Address: {customer_address}")
         print(get_gmap_direction(customer_address))
         print(f"Cas Penghantaran: RM{delivery_charge:.2f}")
-        print(f"Collect dari Customer: *RM{colect_from_customer:.2f}*")
+        print(f"Collect dari Customer: *RM{collect_from_customer:.2f}*")
         print(f"OrderID: {order_id}")
         msg_to_rider = buf.getvalue()
     with io.StringIO() as buf, redirect_stdout(buf):
@@ -86,29 +86,35 @@ def gen_text_msg(master_order_list, master_food_list, order_num, rider):
         print(f"OrderID: {order_id}")
         msg_to_shop = buf.getvalue()
 
-    return msg_to_rider, msg_to_shop
+    if msg_target == 'rider':
+        return msg_to_rider
+    elif msg_target == 'shop':
+        return msg_to_shop
+    else:
+        return 'ERROR: message target is not recognized'
 
 
 if __name__ == '__main__':
-    # master_order_list = ['1899955', '03/01/2019 8:30 PM', '03/01/2019 6:33 PM', "Nan's Kitchen", 'Nizam Zain', '0135104516', 'nizamdiha@gmail.com', '18 Lorong Limonia 3  Bertam LAKESIDE ', "1x Nasi Goreng Cina; 1x Nasi Goreng Daging; 1x Nan's Special", 3, 1, 23.5, 4.0, 27.5, 0.0, 23.5, 'new_order_04012019.022721.html.txt', '']
-    # master_food_list = [['1899955', "Nan's Kitchen", 'Nasi Goreng Cina', '6.50', '1', ' ', 'new_order_04012019.022721.html.txt', ''], ['1899955', "Nan's Kitchen", 'Nasi Goreng Daging', '7.00', '1', ' ', 'new_order_04012019.022721.html.txt', ''], ['1899955', "Nan's Kitchen", "Nan's Special", '10.00', '1', ' ', 'new_order_04012019.022721.html.txt', '']]
+    # masterOrderList = ['1899955', '03/01/2019 8:30 PM', '03/01/2019 6:33 PM', "Nan's Kitchen", 'Nizam Zain', '0135104516', 'nizamdiha@gmail.com', '18 Lorong Limonia 3  Bertam LAKESIDE ', "1x Nasi Goreng Cina; 1x Nasi Goreng Daging; 1x Nan's Special", 3, 1, 23.5, 4.0, 27.5, 0.0, 23.5, 'new_order_04012019.022721.html.txt', '']
+    # masterFoodList = [['1899955', "Nan's Kitchen", 'Nasi Goreng Cina', '6.50', '1', ' ', 'new_order_04012019.022721.html.txt', ''], ['1899955', "Nan's Kitchen", 'Nasi Goreng Daging', '7.00', '1', ' ', 'new_order_04012019.022721.html.txt', ''], ['1899955', "Nan's Kitchen", "Nan's Special", '10.00', '1', ' ', 'new_order_04012019.022721.html.txt', '']]
 
-    master_order_list = ['1898054.1', '02/01/2019 12:30 PM', '02/01/2019 11:10 AM', "HippoFood (Nan's Kitchen)",
+    masterOrderList = ['1898054.1', '02/01/2019 12:30 PM', '02/01/2019 11:10 AM', "HippoFood (Nan's Kitchen)",
                          'nurul nadiah azmi', '01114430036', 'yon.paan@yahoo.com', 'no 55 g jalan dagangan 10 no 5 g',
                          '1x Nasi Ayam Kunyit (NK)', 1, 2, 7.0, 0.0, 7.0, 2.0, 5.0,
                          'new_order_04012019.022700.html.txt', '']
-    master_food_list = [['1898054.1', "HippoFood (Nan's Kitchen)", 'Nasi Ayam Kunyit (NK)',
+    masterFoodList = [['1898054.1', "HippoFood (Nan's Kitchen)", 'Nasi Ayam Kunyit (NK)',
                          '7.00', '1', ' ', 'new_order_04012019.022700.html.txt', '']]
 
-    # master_order_list = ['1899992', '03/01/2019 8:50 PM', '03/01/2019 7:48 PM', 'Char Koay Teow CIMB', 'Ayu  Halim', '0125550186', 'ayupali8684@gmail.com', '1728 Kepala Batas', '2x Char Koay Teow Biasa', 2, 3, 11.0, 4.0, 15.0, 1.0, 10.0, 'new_order_04012019.022731.html.txt', '']
-    # master_food_list = [['1899992', 'Char Koay Teow CIMB', 'Char Koay Teow Biasa', '5.50', '2', ' ', 'new_order_04012019.022731.html.txt', '']]
+    # masterOrderList = ['1899992', '03/01/2019 8:50 PM', '03/01/2019 7:48 PM', 'Char Koay Teow CIMB', 'Ayu  Halim', '0125550186', 'ayupali8684@gmail.com', '1728 Kepala Batas', '2x Char Koay Teow Biasa', 2, 3, 11.0, 4.0, 15.0, 1.0, 10.0, 'new_order_04012019.022731.html.txt', '']
+    # masterFoodList = [['1899992', 'Char Koay Teow CIMB', 'Char Koay Teow Biasa', '5.50', '2', ' ', 'new_order_04012019.022731.html.txt', '']]
 
-    # master_order_list = ['1899890', '03/01/2019 2:25 PM', '03/01/2019 1:22 PM', 'Anjung Satay', 'Rozana Abd Rahim', '0134325494', 'rozana_ummizaim@yahoo.com', 'Jalan Perak, 13200 Kepala Batas 1', '2x Mee Tulang; 2x Nasi Daging', 4, 1, 28.0, 4.0, 32.0, 0.0, 28.0, 'new_order_04012019.022714.html.txt', '']
-    # master_food_list = [['1899890', 'Anjung Satay', 'Mee Tulang', '7.00', '2', ' ', 'new_order_04012019.022714.html.txt', ''], ['1899890', 'Anjung Satay', 'Nasi Daging', '7.00', '2', ' ', 'new_order_04012019.022714.html.txt', '']]
+    # masterOrderList = ['1899890', '03/01/2019 2:25 PM', '03/01/2019 1:22 PM', 'Anjung Satay', 'Rozana Abd Rahim', '0134325494', 'rozana_ummizaim@yahoo.com', 'Jalan Perak, 13200 Kepala Batas 1', '2x Mee Tulang; 2x Nasi Daging', 4, 1, 28.0, 4.0, 32.0, 0.0, 28.0, 'new_order_04012019.022714.html.txt', '']
+    # masterFoodList = [['1899890', 'Anjung Satay', 'Mee Tulang', '7.00', '2', ' ', 'new_order_04012019.022714.html.txt', ''], ['1899890', 'Anjung Satay', 'Nasi Daging', '7.00', '2', ' ', 'new_order_04012019.022714.html.txt', '']]
 
-    order_num = 1
-    rider = '?'
+    orderNum = 1
+    riderName = '?'
 
-    msg_to_rider, msg_to_shop = gen_text_msg(master_order_list, master_food_list, order_num, rider)
-    print(msg_to_rider)
-    print(msg_to_shop)
+    msgToRider = gen_text_msg('rider', masterOrderList, masterFoodList, orderNum, riderName)
+    msgToShop = gen_text_msg('shop', masterOrderList, masterFoodList, orderNum, riderName)
+    print(msgToRider)
+    print(msgToShop)

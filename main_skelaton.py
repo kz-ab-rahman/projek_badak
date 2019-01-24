@@ -27,7 +27,7 @@ while True:
         if auto_mode:
             push = auto_push
         else:
-            push = input('push data to database? ')
+            push = input('pushData data to database? ')
 
         if int(push):
             print('pushing data to database...')
@@ -40,7 +40,7 @@ while True:
         time.sleep(3)
         continue
 
-    # auto_mode will never reach this point
+    # autoMode will never reach this point
     loop = input('search again? 0-No, 1-Yes:')
 
     if int(loop):

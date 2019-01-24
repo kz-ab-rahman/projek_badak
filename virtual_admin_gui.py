@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import *
 import global_param
+import msg_generator
 
 
 class VirtualAdmin(tk.Tk):
@@ -48,21 +49,23 @@ class VirtualAdmin(tk.Tk):
             output = "*ERROR*: request is not alphanumeric"
         else:  # if alphanumeric
             request = request.lower()  # make all lower case
-            requestList = request.split()  # split each work into list
-            if len(requestList) > 3:
-                requestList = requestList[:3]  # if request is more than 3 words, strip out the rest.
-            if len(requestList) == 0:
+            request_list = request.split()  # split each work into list
+            if len(request_list) > 3:
+                request_list = request_list[:3]  # if request is more than 3 words, strip out the rest.
+            if len(request_list) == 0:
                 request = ''
-            if len(requestList) >= 1:
-                request = requestList[0]
-            if len(requestList) >= 2:
-                orderID = requestList[1]
-            if len(requestList) == 3:
-                misc = requestList[2]
+            if len(request_list) >= 1:
+                request = request_list[0]
+            if len(request_list) >= 2:
+                order_id = request_list[1]
+            if len(request_list) == 3:
+                data = request_list[2]
 
             if request in global_param.rdReqList:
+                self.read_request(request, order_id)
                 output = 'READ: '+request.upper()
             elif request in global_param.wrReqList:
+                self.write_request(request, order_id, data)
                 output = 'WRITE: '+request.upper()
             elif request == '':
                 pass
@@ -71,6 +74,22 @@ class VirtualAdmin(tk.Tk):
 
         self.resBox.delete(1.0, END)  # clear res box
         self.resBox.insert(INSERT, output)  # display the output
+
+    def read_request(self, request, order_id):
+        # open today.csv for reading
+        # extract the line that has the order id
+        # remap the line to masterOrderList and masterFoodList
+        if request == 'msg2shop':
+            response = msg_generator.gen_text_msg('shop', master_order_list, master_food_list,
+                                                   order_num, rider_name)
+        elif request == 'msg2rider':
+            response = msg_generator.gen_text_msg('rider', master_order_list, master_food_list,
+                                                   order_num, rider_name)
+
+        return response
+
+    def write_request(self, request, order_id, data):
+        return
 
 
 print("Virtual Admin GUI is running in this terminal")
