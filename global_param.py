@@ -1,6 +1,8 @@
 #!python3
 import time
 
+debug = False
+
 work_path = 'C:\\Users\\mabrahma\\PycharmProjects\\projek_badak\\'
 raw_email_path = work_path + 'raw_email\\'
 
@@ -28,21 +30,23 @@ username = 'hippofooddelivery@gmail.com'
 server_name = 'imap.gmail.com'
 email_folder = 'Inbox'
 check_interval = 10  # sec
-ok_subject = ['New order has been placed',
-              'New order lunch Set has been placed',
-              'Hello',
-              'Hippo Fast Food Delivery',
+ok_subject = ['New order has been placed',              # order_type 0
+              'New order lunch Set has been placed',    # order_type 1
+              'Hello',                                  # order_type 2
+              'Hippo Fast Food Delivery',               # order_type 3
+              'Brownies New order has been placed',     # order_type 4
               ]
 
 # regex. https://regex101.com/
 regex_in_order = r"Number: <\/strong>\s?([^<]+).*Place Time: <\/strong>\s?([^<]+)<\/p><hr(?: \/|><p)>(.*)(?:Tax Total|Delivery (?:Charge|Fee)).*Created on :<\/strong> ([^<]+)<\/p><p>([^<]+).*Information :<\/strong><\/p><p>(.*)<br(?: \/)?>\s?(.*)<br(?: \/)?>\s?(.*)<br(?: \/)?>(.*)<br(?: \/)?>"
 regex_in_food = r"Details<\/strong> : (.+)\s\((?:RM)?([^)]+).*Qty<\/strong> : ([^<]+).*Notes <\/strong>:\s?([^<]+)"
 regex_in_fast_food = r"Nama</td><td style3D\"background:#fff; padding:10px;\">([^<]+).*Phone</td><td style3D\"background:#fff; padding:10px;\">([^<]+).*Alamat</td><td style3D\"background:#fff; padding:10px;\">([^<]+).*Nama Restoran</td><td style3D\"background:#fff; padding:10px;\">([^<]+).*Menu</td><td style3D\"background:#fff; padding:10px;\">([^<]+).*Masa Penghantaran</td><td style3D\"background:#fff; padding:10px;\">([^<]+).*received at ([^ ]+) (.*)"
+regex_in_food_in_bracket = r".*\((.*(?:Nasi|Mee|Keow|Bihun|Kerabu|Tom|Telur|Sup|Ayam|Daging|Ikan).*)\)"
 
 # list of request supported by Virtual Admin
-rdReqList = ['status', 'msg2shop', 'msg2rider', 'riderName', 'help']
-wrReqList = ['cancel', 'donepickup', 'donedeliver', 'updateaddress',
-             'updatefood', 'updatephone', 'setrider']
+valid_req_list = ['status', 'msg2shop', 'msg2rider', 'riderName', 'help',  # read request
+                  'cancel', 'donepickup', 'donedeliver', 'updateaddress',  # read request
+                  'updatefood', 'updatephone', 'setrider']
 
 # mouse position for theBridge
 newMsgPixColor = (255, 255, 255)

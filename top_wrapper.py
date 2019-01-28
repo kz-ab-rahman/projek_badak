@@ -145,6 +145,9 @@ for arg in argList:
             print(valid_arg + ' ', end='')
         exit()
 
+if 'debug' in argList:
+    global_param.debug = True
+
 mailObj = email_login(global_param.server_name, global_param.username, global_param.email_folder)
 tag = input('Add tag OR hit [ENTER] for no tag: ')  # admin can add tag here (optional)
 counter = 0  # counter var is used to ensure in get_search_criteria is called only ONCE in automde

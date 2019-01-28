@@ -12,7 +12,7 @@ def get_order_tool(order_file_name):
     if order_file_name.find('type0') != -1:
         return 'app'
     elif order_file_name.find('type1') != -1:
-        return 'webapp/emulator'
+        return 'web'
     else:
         return 'fastfood'
 
@@ -42,9 +42,10 @@ def get_order_info(order_file_name):
     if match:
         order_info_list = list(match.groups())
         # print('order_info_list[2]: '+order_info_list[2])
+        # add || delimiter to identify different food
         food_info = order_info_list[2].replace('</p><p><strong>Details', '</p>||<p><strong>Details')
         # print('food_info: '+food_info)
-        food_info_list = food_info.split('||')
+        food_info_list = food_info.split('||')  # split the multiple food into list
         keys = []
         for i, rawFood in enumerate(food_info_list):
             # print(i, rawFood)
@@ -55,7 +56,8 @@ def get_order_info(order_file_name):
                 # option = food_match.group()
                 quantity = food_match.group(3)
                 note = food_match.group(4)
-                match = re.search(r".*\((.*(?:Nasi|Mee|Keow|Bihun).*)\)", food)  # will match if the food is in ()
+
+                match = re.search(global_param.regex_in_food_in_bracket, food)  # will match if the food is in ()
                 if match:
                     food = match.group(1)  # take the food inside the bracket
                 match = re.search(r"[\w+\s]+\(([A-Z]{2})\)", food)  # <word><space>(shop key)
@@ -151,6 +153,11 @@ def add_shop():
 def get_shop_info(shop_info):
     # print("inside get_restaurant_info")
     # print(restaurant_info)
+    name = shop_info
+    address = None
+    pic = None
+    phone_num = None
+    shop_info_list = [name, address, pic, phone_num]
     with open(global_param.shop_data_file, 'r') as file:
         next(file)  # skip csv header
         reader = csv.reader(file)
@@ -166,10 +173,8 @@ def get_shop_info(shop_info):
                 break
             else:
                 pass
-    if found:
+    if found:  # if found, update the list with result
         shop_info_list = [name, address, pic, phone_num]
-    else:
-        shop_info_list = [shop_info, None, None, None]
     # print(shop_info_list)
     return shop_info_list
 

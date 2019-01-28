@@ -39,7 +39,7 @@ def new_msg():
     print("in new_msg")
     # check the pixel RGB color at the position of new msg.
     if pyautogui.pixelMatchesColor(global_param.newMsgPos[0], global_param.newMsgPos[1], global_param.newMsgPixColor):
-        # second level check to ensure trigger happens only because of whatsapp
+        # second level check to ensure trigger happens only because of WhatsApp
         if pyautogui.pixelMatchesColor(global_param.newMsgPos[0] - 20, global_param.newMsgPos[1], (22, 33, 39)):
             print("New request received")
             return True
@@ -49,7 +49,7 @@ def new_msg():
         return False
 
 
-print('Make sure Whatsapp is opened, logged-in, and snapped to the right')
+print('Make sure WhatsApp is opened, logged-in, and snapped to the right')
 input('Press enter to start Virtual Admin...')
 os.system("start /wait cmd /c py -3 virtual_admin_gui.py")  # open new terminal and launch GUI
 time.sleep(1)

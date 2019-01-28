@@ -5,11 +5,18 @@ from tkinter import scrolledtext
 from tkinter import *
 import global_param
 import msg_generator
+import backend_core
 
 
 class VirtualAdmin(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+
+        self.request = None
+        self.order_id = None
+        self.data = None
+        self.output = None
+
         self.title("Virtual Admin")
         self.geometry('%dx%d+%d+%d' % (440, 400, 0, 0))
 
@@ -22,7 +29,7 @@ class VirtualAdmin(tk.Tk):
 
         self.resLabel = Label(self, text="Response")
         self.resLabel.grid(column=0, row=1)
-        self.resBox = scrolledtext.ScrolledText(self,width=40,height=23)
+        self.resBox = scrolledtext.ScrolledText(self, width=40, height=23)
         self.resBox.grid(column=1, row=1)
 
         self.goButton = tk.Button(self, text="GO")
@@ -34,61 +41,45 @@ class VirtualAdmin(tk.Tk):
         capture request and run
         """
         try:
-            request = self.reqBox.get()
+            self.request = self.reqBox.get()
         except:
-            request = ' '
+            self.request = ''
         finally:
             self.reqBox.delete(0, END)  # clear req box for next incoming req
-            self.run_and_output(request)
+            self.run_and_output()
 
-    def run_and_output(self, request):
+    def run_and_output(self):
         """
         process request and dump the result on "response" box
         """
-        if not request.isalnum():  # if request not alpanumeric
-            output = "*ERROR*: request is not alphanumeric"
+        if not self.request.isalnum():  # if request not alphanumerics
+            self.output = "*ERROR*: request is not alphanumeric"
         else:  # if alphanumeric
-            request = request.lower()  # make all lower case
-            request_list = request.split()  # split each work into list
+            self.request = self.request.lower()  # make all lower case
+            request_list = self.request.split()  # split each work into list
             if len(request_list) > 3:
                 request_list = request_list[:3]  # if request is more than 3 words, strip out the rest.
             if len(request_list) == 0:
-                request = ''
+                self.request = ''
             if len(request_list) >= 1:
-                request = request_list[0]
+                self.request = request_list[0]
             if len(request_list) >= 2:
-                order_id = request_list[1]
+                self.order_id = request_list[1]
             if len(request_list) == 3:
-                data = request_list[2]
+                self.data = request_list[2]
 
-            if request in global_param.rdReqList:
-                self.read_request(request, order_id)
-                output = 'READ: '+request.upper()
-            elif request in global_param.wrReqList:
-                self.write_request(request, order_id, data)
-                output = 'WRITE: '+request.upper()
-            elif request == '':
+            if self.request in global_param.valid_req_list:
+                self.process_request()
+                self.output = 'DUMMY RESPONSE: ' + self.request.upper()
+            elif self.request == '':
                 pass
             else:
-                output = "*ERROR*: '"+request+"' request is not recognized"
+                self.output = "*ERROR*: '" + self.request + "' request is not recognized"
 
         self.resBox.delete(1.0, END)  # clear res box
-        self.resBox.insert(INSERT, output)  # display the output
+        self.resBox.insert(INSERT, self.output)  # display the output
 
-    def read_request(self, request, order_id):
-        # open today.csv for reading
-        # extract the line that has the order id
-        # remap the line to masterOrderList and masterFoodList
-        if request == 'msg2shop':
-            response = msg_generator.gen_text_msg('shop', master_order_list, master_food_list,
-                                                   order_num, rider_name)
-        elif request == 'msg2rider':
-            response = msg_generator.gen_text_msg('rider', master_order_list, master_food_list,
-                                                   order_num, rider_name)
-
-        return response
-
-    def write_request(self, request, order_id, data):
+    def process_request(self):
         return
 
 

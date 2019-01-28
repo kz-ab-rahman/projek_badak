@@ -1,13 +1,11 @@
 #!python3
 
 import email
-import imaplib
-import getpass
 import time
 import hashlib
 import re
 import global_param
-from datetime import datetime,timezone
+from datetime import datetime, timezone
 
 
 def get_new_email(mail, search_mode, since, before, sender):
@@ -35,19 +33,34 @@ def get_new_email(mail, search_mode, since, before, sender):
 def get_new_order(mail, email_list):
     new_order_file_list = []
     md5_old = ''
-    new_email_num = len(email_list)
+    new_email_total = len(email_list)
     for num, email_id in enumerate(email_list):
-        print('Processing...'+str(num+1)+' of '+str(new_email_num))
+        print('Processing...'+str(num+1)+' of '+str(new_email_total))
+        if global_param.debug:
+            print(f"DEBUG: email_id = {email_id}")
         result, email_data = mail.fetch(email_id, 'RFC822')
         raw_email = email_data[0][1].decode("utf-8")
         email_msg = email.message_from_string(raw_email)
-        # sender = email_msg['from']
+        if global_param.debug:
+            print("DEBUG: email_msg =")
+            print(email_msg)
+        sender = email_msg['from']
         subject = email_msg['subject']
         utc_time = email_msg['date']
+        if global_param.debug:
+            print(f"DEBUG: sender = {sender}")
+            print(f"DEBUG: subject = {subject}")
+            print(f"DEBUG: utc_time = {utc_time}")
         # convert timezone from UTC -> local
+        utc_time_list = utc_time.split(" ")  # split the time into list first
+        if len(utc_time_list) > 6:
+            utc_time_list = utc_time_list[:6]  # strip off anything after 5th items.
+            utc_time = " ".join(utc_time_list)  # rejoin the list into str
         utc_time_obj = datetime.strptime(utc_time, '%a, %d %b %Y %H:%M:%S %z')
         local_time_obj = utc_time_obj.replace(tzinfo=timezone.utc).astimezone(tz=None)
         received_time = local_time_obj.strftime('%d/%m/%Y %I:%M %p')
+        if global_param.debug:
+            print(f"DEBUG: received_time = {received_time}")
 
         proceed = False
         order_type = -1
